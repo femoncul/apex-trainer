@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX — Personal Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --card: #161616;
+    --border: #222;
+    --accent: #e8ff47;
+    --accent2: #ff4d4d;
+    --text: #f0f0f0;
+    --muted: #666;
+    --green: #3dff8f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--green);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 60px 24px 40px;
+    animation: fadeUp .5s ease both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .hero-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    line-height: .95;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 480px;
+    margin-bottom: 40px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group.full { grid-column: 1/-1; }
+  label {
+    font-size: .75rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  input, select, textarea {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    transition: border .2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--card); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .chip {
+    padding: 7px 16px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: .82rem;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip.active, .chip:hover { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 15px 36px;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all .2s;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .btn-primary:hover { background: #d4eb30; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,.2); }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* TRAINER SCREEN */
+  #trainer-screen {
+    display: none;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 60px;
+    animation: fadeUp .5s ease both;
+  }
+
+  .trainer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .trainer-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 2px;
+  }
+  .trainer-title span { color: var(--accent); }
+  .profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: .82rem;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, #80ff90 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #000; font-size: .8rem;
+  }
+
+  /* STATS STRIP */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .stat-label {
+    font-size: .7rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .stat-sub { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+  /* CHAT */
+  .chat-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .chat-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #0f0f0f;
+  }
+  .chat-toolbar-title {
+    font-family: 'Space Mono', monospace;
+    font-size: .75rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .quick-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .quick-btn {
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: .75rem;
+    cursor: pointer;
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #chat-messages {
+    height: 420px;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+  #chat-messages::-webkit-scrollbar { width: 4px; }
+  #chat-messages::-webkit-scrollbar-track { background: transparent; }
+  #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg {
+    max-width: 82%;
+    animation: fadeUp .3s ease both;
+  }
+  .msg.ai { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+
+  .msg-bubble {
+    padding: 13px 17px;
+    border-radius: 16px;
+    font-size: .93rem;
+    line-height: 1.6;
+  }
+  .msg.ai .msg-bubble {
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user .msg-bubble {
+    background: var(--accent);
+    color: #000;
+    font-weight: 500;
+    border-bottom-right-radius: 4px;
+  }
+  .msg-sender {
+    font-size: .7rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+  }
+  .msg.user .msg-sender { text-align: right; color: var(--muted); }
+
+  /* Typing indicator */
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .typing-dots span {
+    width: 7px; height: 7px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.2s ease infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+  /* CHAT INPUT */
+  .chat-input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: #0f0f0f;
+  }
+  #user-input {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-size: .93rem;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  .send-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    width: 46px;
+    height: 46px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .send-btn:hover { background: #d4eb30; transform: scale(1.05); }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* WORKOUT PLAN SECTION */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .plan-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .plan-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .plan-card-header:hover { background: #1a1a1a; }
+  .plan-day-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .day-num {
+    background: var(--accent);
+    color: #000;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .day-title { font-weight: 600; font-size: .95rem; }
+  .day-sub { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+  .plan-toggle { color: var(--muted); font-size: 1.2rem; transition: transform .2s; }
+  .plan-card.open .plan-toggle { transform: rotate(180deg); }
+  .plan-card-body { display: none; padding: 0 18px 16px; }
+  .plan-card.open .plan-card-body { display: block; }
+  .exercise-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .88rem;
+  }
+  .exercise-row:last-child { border-bottom: none; }
+  .ex-name { color: var(--text); }
+  .ex-sets { font-family: 'Space Mono', monospace; font-size: .78rem; color: var(--accent); }
+
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: .82rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .2s;
+  }
+  .reset-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* Markdown-ish formatting in AI messages */
+  .msg-bubble strong { color: var(--accent); font-weight: 700; }
+  .msg-bubble em { color: var(--green); font-style: normal; font-weight: 500; }
+  .msg-bubble ul { padding-left: 18px; margin: 6px 0; }
+  .msg-bubble li { margin: 3px 0; }
+
+  /* EXERCISE POPUP MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+    transform: translateY(20px) scale(.97);
+    transition: transform .3s cubic-bezier(.22,.97,.36,1);
+    box-shadow: 0 32px 80px rgba(0,0,0,.8);
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-img-wrap {
+    position: relative;
+    height: 240px;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+  .modal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity .4s;
+  }
+  .modal-img.loading { opacity: 0; }
+  .modal-img-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--border);
+  }
+  .modal-img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(22,22,22,1) 0%, rgba(22,22,22,0) 60%);
+  }
+  .modal-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #fff;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+    z-index: 2;
+  }
+  .modal-close:hover { background: rgba(255,255,255,.15); }
+
+  .modal-body { padding: 20px 24px 24px; }
+  .modal-ex-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .modal-sets-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Space Mono', monospace;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .modal-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .modal-tag {
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .72rem;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: .5px;
+  }
+  .modal-desc {
+    font-size: .9rem;
+    line-height: 1.65;
+    color: #bbb;
+  }
+  .modal-tips {
+    margin-top: 14px;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .modal-tips-title {
+    font-size: .7rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .modal-tips ul { padding-left: 16px; }
+  .modal-tips li { font-size: .83rem; color: #aaa; margin: 4px 0; line-height: 1.5; }
+
+  .ex-name-clickable {
+    cursor: pointer;
+    transition: color .15s;
+    text-decoration: underline dotted rgba(255,255,255,.25);
+    text-underline-offset: 3px;
+  }
+  .ex-name-clickable:hover { color: var(--accent); }
+
+  @media (max-width: 580px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+    header { padding: 14px 18px; }
+    #setup-screen, #trainer-screen { padding: 28px 16px 40px; }
+    h1 { font-size: 3rem; }
+    #chat-messages { height: 320px; }
+    .quick-btns { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">APEX<span>PT</span></div>
+  <div class="status-pill">
+    <div class="dot"></div>
+    AI TRAINER AKTİF
+  </div>
+</header>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <p class="hero-tag">// Kişisel Antrenörün</p>
+  <h1>HEDEF<br><span>BELİRLE.</span><br>BAŞLA.</h1>
+  <p class="subtitle">Sana özel antrenman planı ve beslenme rehberi oluşturalım. Birkaç bilgi yeterli.</p>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Ad Soyad</label>
+      <input type="text" id="f-name" placeholder="Ahmet Yılmaz">
+    </div>
+    <div class="form-group">
+      <label>Yaş</label>
+      <input type="number" id="f-age" placeholder="28" min="14" max="80">
+    </div>
+    <div class="form-group">
+      <label>Kilo (kg)</label>
+      <input type="number" id="f-weight" placeholder="75">
+    </div>
+    <div class="form-group">
+      <label>Boy (cm)</label>
+      <input type="number" id="f-height" placeholder="178">
+    </div>
+    <div class="form-group full">
+      <label>Deneyim Seviyesi</label>
+      <div class="chips-row" id="level-chips">
+        <button class="chip active" data-val="Yeni Başlayan">🔰 Başlangıç</button>
+        <button class="chip" data-val="Orta Seviye">⚡ Orta</button>
+        <button class="chip" data-val="İleri Seviye">🔥 İleri</button>
+      </div>
+    </div>
+    <div class="form-group full">
+      <label>Ana Hedef</label>
+      <div class="chips-row" id="goal-chips">
+        <button class="chip active" data-val="Yağ yakma ve form kazanma">🔥 Yağ Yak</button>
+        <button class="chip" data-val="Kas kütlesi ve güç artırma">💪 Kas Kazan</button>
+        <button class="chip" data-val="Genel fitness ve sağlık">🌿 Sağlıklı Kal</button>
+        <button class="chip" data-val="Dayanıklılık ve kondisyon">🏃 Kondisyon</button>
+      </div>
+    </div>
+    <div class="form-group full">
+      <label>Haftalık Antrenman (gün)</label>
+      <div class="chips-row" id="days-chips">
+        <button class="chip" data-val="2">2 Gün</button>
+        <button class="chip" data-val="3">3 Gün</button>
+        <button class="chip active" data-val="4">4 Gün</button>
+        <button class="chip" data-val="5">5 Gün</button>
+      </div>
+    </div>
+    <div class="form-group full">
+      <label>Ekipman / Ortam</label>
+      <div class="chips-row" id="equip-chips">
+        <button class="chip active" data-val="Spor salonu (full ekipman)">🏋️ Spor Salonu</button>
+        <button class="chip" data-val="Evde (minimal ekipman)">🏠 Ev</button>
+        <button class="chip" data-val="Karma (ev + spor salonu)">🔄 Karma</button>
+      </div>
+    </div>
+    <div class="form-group full">
+      <label>Sağlık Durumu / Kısıtlamalar (opsiyonel)</label>
+      <textarea id="f-health" placeholder="Örn: Diz problemim var, bel fıtığı..."></textarea>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="start-btn" onclick="startTrainer()">ANTRENÖRÜMÜ BAŞLAT →</button>
+</div>
+
+<!-- TRAINER SCREEN -->
+<div id="trainer-screen">
+  <div class="trainer-header">
+    <div>
+      <p class="hero-tag">// Kişisel Panelin</p>
+      <div class="trainer-title">MERHABA, <span id="display-name">SPORCU</span></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div class="profile-badge">
+        <div class="avatar" id="avatar-initials">AP</div>
+        <span id="badge-goal">Hedef</span>
+      </div>
+      <button class="reset-btn" onclick="resetApp()">↩ Yeniden Başla</button>
+    </div>
+  </div>
+
+  <div class="stats-strip" id="stats-strip"></div>
+
+  <!-- AI CHAT -->
+  <div class="chat-section">
+    <div class="chat-toolbar">
+      <span class="chat-toolbar-title">// APEX AI Antrenör</span>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickAsk('Bugünkü antrenmanımı ver')">Bugünkü antrenman</button>
+        <button class="quick-btn" onclick="quickAsk('Beslenme önerisi ver')">Beslenme</button>
+        <button class="quick-btn" onclick="quickAsk('Motivasyon ver bana')">Motivasyon 💪</button>
+        <button class="quick-btn" onclick="quickAsk('İlerleme nasıl takip etmeliyim?')">İlerleme</button>
+      </div>
+    </div>
+    <div id="chat-messages"></div>
+    <div class="chat-input-bar">
+      <textarea id="user-input" placeholder="Antrenörüne sor... (Enter = gönder)" rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- WORKOUT PLAN -->
+  <div class="section-title">HAFTALIK PROGRAM</div>
+  <div id="workout-plan"></div>
+</div>
+
+<!-- EXERCISE MODAL -->
+<div class="modal-overlay" id="ex-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-img-wrap">
+      <div class="modal-img-placeholder" id="modal-placeholder">🏋️</div>
+      <img class="modal-img loading" id="modal-img" src="" alt="" onload="this.classList.remove('loading')" onerror="this.style.display='none'">
+      <div class="modal-img-overlay"></div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-ex-name" id="modal-name">Exercise</div>
+      <div class="modal-sets-badge" id="modal-sets">3×12</div>
+      <div class="modal-tags" id="modal-tags"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-tips">
+        <div class="modal-tips-title">// Pro İpuçları</div>
+        <ul id="modal-tips-list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── EXERCISE DATABASE ───────────────────────────────────
+const exerciseDB = {
+  'Barbell Bench Press': {
+    muscle: ['Göğüs', 'Triceps', 'Omuz'],
+    category: 'Bileşik · Üst Vücut',
+    desc: 'Fitness\'in klasiği. Düz bench üzerinde barbell ile yapılan bu bileşik hareket, göğüs kaslarını, ön omuzları ve tricepsi aynı anda çalıştırır. Güç ve kas kütlesi için temel bir egzersizdir.',
+    tips: ['Omuz bıçaklarını birbirine yaklaştır, göğsünü kabartarak sıkı bir taban oluştur', 'Bar boyun hizasında değil, göğüs ortasına insin', 'Ayaklar yerde düz olsun, köprü yapmaktan kaçın'],
+    img: 'barbell bench press gym',
+    emoji: '🏋️'
+  },
+  'Incline DB Press': {
+    muscle: ['Üst Göğüs', 'Omuz'],
+    category: 'Bileşik · Üst Vücut',
+    desc: '30-45° eğimli bankta dumbbell ile yapılan press. Üst göğüs bölgesini ve ön deltoidleri özellikle hedef alır. Göğüste dolgunluk ve estetik şekil için kritik.',
+    tips: ['Bank açısı 30-45° arası olsun — fazla dik omuzlara yükler', 'Dumbbellları hareketin sonunda üstte birbirine değdirme', 'Kontrollü iniş, patlayıcı çıkış'],
+    img: 'incline dumbbell press',
+    emoji: '💪'
+  },
+  'Cable Flyes': {
+    muscle: ['Göğüs (iç)', 'Ön Omuz'],
+    category: 'İzolasyon · Göğüs',
+    desc: 'Kablo makinesiyle yapılan flye hareketi, göğüs kasının iç kısmını ve orta hattını mükemmel şekilde izole eder. Kas-zihin bağlantısını güçlendirmek için idealdir.',
+    tips: ['Hafif öne eğil, dirsekler hafif kırık sabit kalsın', 'Hareketi göğüste hissederek yap, ellerle değil', 'Tam açılım daha derin stretch için kritik'],
+    img: 'cable flyes chest machine',
+    emoji: '🔗'
+  },
+  'Triceps Pushdown': {
+    muscle: ['Triceps'],
+    category: 'İzolasyon · Kol',
+    desc: 'Kablo makinesinde, rope veya düz bar ile yapılan triceps izolasyon hareketi. Kolun arka kısmını şekillendirir ve güçlendirir. Yeni başlayanlar için öğrenmesi kolay klasik bir harekettir.',
+    tips: ['Dirsekler gövde yanında sabit dursun, hareket sadece önkoldan olsun', 'Tam açılımda 1 saniye izo tut', 'Ağırlığı kontrollü geri bırak'],
+    img: 'triceps pushdown cable',
+    emoji: '💥'
+  },
+  'Skull Crushers': {
+    muscle: ['Triceps (uzun baş)'],
+    category: 'İzolasyon · Kol',
+    desc: 'Bench üzerinde yatarak EZ bar veya dumbbell ile yapılan triceps hareketi. Tricepsin uzun başını derinlemesine çalıştırır. İsmine rağmen doğru form ile tamamen güvenlidir.',
+    tips: ['Bar alnın 2-3 cm üzerinden geç, kafaya değdirme', 'Dirsekler dışa açılmasın, içe doğru kalsın', 'Ağırlığı aşma — form bozulursa indir'],
+    img: 'skull crushers triceps exercise',
+    emoji: '💀'
+  },
+  'Deadlift': {
+    muscle: ['Sırt', 'Hamstring', 'Glutes', 'Core'],
+    category: 'Bileşik · Tam Vücut',
+    desc: 'Spordaki en temel kaldırma hareketlerinden biri. Yerden barbell kaldırarak hemen hemen tüm vücut kaslarını aktive eder. Doğru formla yapıldığında inanılmaz güç ve kas gelişimi sağlar.',
+    tips: ['Bel nötral kalsın, kambur asla', 'Bar ayak orta hizasında başlasın, bacaklara yakın çıksın', 'Kalça ve dizler aynı anda açılsın'],
+    img: 'deadlift barbell gym',
+    emoji: '⚡'
+  },
+  'Lat Pulldown': {
+    muscle: ['Latissimus Dorsi', 'Biceps', 'Rear Delt'],
+    category: 'Bileşik · Sırt',
+    desc: 'Kablo makinesiyle yapılan pulldown, sırtın en geniş kasını (latissimus dorsi) hedef alır. Pull-up yapamayanlara mükemmel bir alternatif, yapabilenlere ise harika bir tamamlayıcıdır.',
+    tips: ['Geniş kavrama ile V-taper için, dar kavrama ile kalınlık için', 'Göğse çekmeye çalış, karnına değil', 'Kontrollü dönüşte stretch hissettir'],
+    img: 'lat pulldown machine back',
+    emoji: '🔽'
+  },
+  'Seated Cable Row': {
+    muscle: ['Orta Sırt', 'Rhomboids', 'Biceps'],
+    category: 'Bileşik · Sırt',
+    desc: 'Oturarak kablo çekişi, sırtın orta bölümünü ve rhomboidleri mükemmel çalıştırır. Postür düzeltmeye ve sırt kalınlığı kazanmaya çok etkilidir.',
+    tips: ['Çekişte omuzları geriye ve aşağıya al', 'Gövdeyi geriye yatırma — hareket omuzdan gelsin', 'Tam uzanış ile tam stretch yakalanır'],
+    img: 'seated cable row gym',
+    emoji: '🚣'
+  },
+  'Bicep Curl': {
+    muscle: ['Biceps Brachii'],
+    category: 'İzolasyon · Kol',
+    desc: 'Fitness\'in ikonik hareketi. Dumbbell veya barbell ile yapılan bu izolasyon egzersizi, bicepsi direkt çalıştırır. Kas-zihin bağlantısı kurmayı öğrenmek için mükemmeldir.',
+    tips: ['Dirsekler gövde yanında sabit kalsın', 'Supinasyon (bilekle dışa dönüş) kasılmayı artırır', 'Momentum kullanma — sallayarak değil, kontrollü kaldır'],
+    img: 'dumbbell bicep curl',
+    emoji: '💪'
+  },
+  'Hammer Curl': {
+    muscle: ['Brachialis', 'Biceps', 'Ön Kol'],
+    category: 'İzolasyon · Kol',
+    desc: 'Nötr kavrama (başparmak yukarı) ile yapılan curl. Brachialis kasını ve ön kol kaslarını güçlü çalıştırır. Kol kalınlığı ve genel kol gelişimi için mutlaka programa eklenmelidir.',
+    tips: ['Bilek sabit, dönüşsüz nötr pozisyon korunsun', 'Çift veya alternatif dumbbell ile yapılabilir', 'Yavaş tempo daha iyi TUT (zaman altında gerilim) sağlar'],
+    img: 'hammer curl dumbbell arms',
+    emoji: '🔨'
+  },
+  'Squat': {
+    muscle: ['Quadriceps', 'Glutes', 'Hamstring', 'Core'],
+    category: 'Bileşik · Alt Vücut',
+    desc: '"Egzersizlerin kralı." Barbell ile omuzda ya da vücut ağırlığıyla yapılan squat, alt vücudu bütünsel olarak geliştirir. Diz, kalça ve omurganın sağlığı için de kritik öneme sahiptir.',
+    tips: ['Dizler ayak parmakları yönünde açılsın, içe kapanmasın', 'Kalça en az diz hizasına insin (full depth)', 'Göğüs dik, bel nötral kalsın'],
+    img: 'barbell squat gym legs',
+    emoji: '🏋️'
+  },
+  'Leg Press': {
+    muscle: ['Quadriceps', 'Glutes'],
+    category: 'Bileşik · Alt Vücut',
+    desc: 'Makine üzerinde bacakları iterek yapılan bileşik hareket. Squat\'a iyi bir tamamlayıcıdır. Ayak pozisyonu değiştirilerek farklı kaslar vurgulanabilir.',
+    tips: ['Dizler 90° nin altına ineceği kadar aç — fakat beli yerden kaldırma', 'Ayak yüksekte = daha fazla glutes, altta = daha fazla quad', 'Son rep\'te kilidi tamamen açma'],
+    img: 'leg press machine exercise',
+    emoji: '🦵'
+  },
+  'Romanian Deadlift': {
+    muscle: ['Hamstring', 'Glutes', 'Alt Sırt'],
+    category: 'Bileşik · Alt Vücut',
+    desc: 'Hamstring ve glutes\'ü aşırı derecede çalıştıran bu hip hinge hareketi, posterior chain\'in gelişimi için olmazsa olmazdır. Esneklik ve güç aynı anda gelişir.',
+    tips: ['Dizler hafif kırık, sabit kalsın', 'Bar bacaklara sürtercesine aşağı insin', 'Hamstringlerin gerildiğini hissedince dur, beli yuvarlama'],
+    img: 'romanian deadlift hamstring',
+    emoji: '🎯'
+  },
+  'Leg Curl': {
+    muscle: ['Hamstrings'],
+    category: 'İzolasyon · Bacak',
+    desc: 'Makine üzerinde ayak bileğini bükerek yapılan izolasyon hareketi. Hamstring kaslarını direkt hedef alır. Diz sağlığı ve arka bacak estetiği için önemlidir.',
+    tips: ['Hareket boyunca kalçalar makineye yapışık kalsın', 'Tam kasılma ve tam açılım arasındaki ROM\'u koru', 'Yavaş eksantrik (iniş) faz hamstringleri daha iyi geliştirir'],
+    img: 'leg curl machine hamstrings',
+    emoji: '🦵'
+  },
+  'Calf Raise': {
+    muscle: ['Gastrocnemius', 'Soleus'],
+    category: 'İzolasyon · Bacak',
+    desc: 'Ayak parmak uçlarında yükselerek yapılan izolasyon hareketi. Baldır kaslarını güçlendirir ve şekillendirir. Hem oturarak hem ayakta yapılabilir.',
+    tips: ['Tam aşağı in — stretch önemli', 'Tepe noktada 1-2 saniye tut', 'Yüksek tekrar (15-20) çalışır — ağır ama az değil'],
+    img: 'calf raise exercise gym',
+    emoji: '👟'
+  },
+  'Overhead Press': {
+    muscle: ['Omuz', 'Triceps', 'Üst Göğüs'],
+    category: 'Bileşik · Üst Vücut',
+    desc: 'Barbell veya dumbbell ile ayakta ya da oturarak yapılan dikey itme hareketi. Omuzları ve tricepsi güçlendirir, core stabilitesini artırır.',
+    tips: ['Core sıkı tut — beli aşırı büküp kamburlaşma', 'Bar kulak hizasında başlasın', 'Dizleri hafif kırık tutmak dengeyi artırır'],
+    img: 'overhead press barbell shoulder',
+    emoji: '🙌'
+  },
+  'Lateral Raise': {
+    muscle: ['Yan Deltoid'],
+    category: 'İzolasyon · Omuz',
+    desc: 'Kolları yanlara açma hareketi. Omuzların geniş ve yuvarlak görünümünden sorumlu olan medial deltoidleri izole eder. Estetik omuz gelişimi için vazgeçilmez.',
+    tips: ['Hafif ağırlık, yüksek tekrar çalışır bu kas için', 'Bilek dirsek hizasında veya biraz önde olsun', 'Momentum kullanma — sallama değil, kontrollü kaldır'],
+    img: 'lateral raise dumbbell shoulders',
+    emoji: '↔️'
+  },
+  'Face Pull': {
+    muscle: ['Rear Delt', 'Rotator Cuff', 'Trapez'],
+    category: 'Koruyucu · Omuz',
+    desc: 'Kablo makinesiyle yüze doğru çekilen bu hareket, arka omuzları ve rotator cuff\'ı güçlendirerek omuz sağlığını korur. Her antrenman programında olması gereken bir egzersizdir.',
+    tips: ['Kablo göz hizasında ayarlanmalı', 'Elleri yüze yaklaştırırken dışa dön (external rotation)', 'Hafif ağırlık, yüksek tekrar — bu bir sağlık egzersizi'],
+    img: 'face pull cable rear delt',
+    emoji: '🎯'
+  },
+  'Plank': {
+    muscle: ['Core', 'Transverse Abdominis', 'Omuz'],
+    category: 'Dayanıklılık · Core',
+    desc: 'En etkili core egzersizlerinden biri. Statik pozisyonda vücudu destekleyerek karın, alt sırt ve omuzları aynı anda çalıştırır. Basit görünür ama doğru yapıldığında çok zorludur.',
+    tips: ['Beden düz bir çizgi oluştursun — kalça ne yukarıda ne aşağıda', 'Core\'u sıkıştır sanki karına yumruk yiyecekmiş gibi', 'Nefes almaya devam et — nefes tutma'],
+    img: 'plank exercise core',
+    emoji: '🧱'
+  },
+  'Cable Crunch / Crunch': {
+    muscle: ['Rectus Abdominis', 'Core'],
+    category: 'İzolasyon · Karın',
+    desc: 'Kablo ile veya vücut ağırlığıyla yapılan karın egzersizi. Rectus abdominis (six-pack kasları) güçlendirir. Kablo versiyonu ile direnç eklenebilir.',
+    tips: ['Hareketi kalçadan değil, belden/karından başlat', 'Boynu zorlamak yerine gözleri yukarıda tut', 'Tam kasılma ve tam açılım önemli'],
+    img: 'cable crunch ab exercise',
+    emoji: '💥'
+  },
+  'Push-Up': {
+    muscle: ['Göğüs', 'Triceps', 'Omuz'],
+    category: 'Vücut Ağırlığı · Üst Vücut',
+    desc: 'Temel kalisteni hareketi. Ekipman gerektirmeden göğüs, omuz ve tricepsi çalıştırır. Doğru form ile çok etkilidir; tempoyu değiştirerek çeşitlendirilebilir.',
+    tips: ['El pozisyonu göğüs altında olsun, çok geniş açma', 'Gövde düz, core sıkı — kalça ne yukarda ne aşağıda', 'Tam aşağı in, göğüs neredeyse yere değsin'],
+    img: 'push up exercise bodyweight',
+    emoji: '⬇️'
+  },
+  'Burpee': {
+    muscle: ['Tam Vücut', 'Cardio'],
+    category: 'HIIT · Fonksiyonel',
+    desc: 'Fitness\'in en zorlu ve etkili tam vücut egzersizlerinden biri. Push-up + squat + sıçrama kombinasyonu. Kardiyovasküler sistemi ve tüm vücut kaslarını aynı anda çalıştırır.',
+    tips: ['Tempoya göre yoğunluğu ayarla — HIIT\'te maximum efor', 'Yumuşak iniş için diz hafif kırık ol', 'Core sıkı tut geçiş boyunca'],
+    img: 'burpee exercise HIIT fitness',
+    emoji: '🔥'
+  },
+  'Kettlebell Swing': {
+    muscle: ['Hamstring', 'Glutes', 'Core', 'Omuz'],
+    category: 'Güç · Fonksiyonel',
+    desc: 'Kettlebell ile yapılan hip hinge tabanlı bu patlayıcı hareket, posterior chain\'i güçlü çalıştırırken kalp atışını da yüksek tutar. Güç ve kondisyon bir arada.',
+    tips: ['Squat değil — hip hinge hareketi, sallama değil itme', 'Kettlebell kalça hizasında itiş gücüyle sallanır', 'Core ve glutes kasılmasıyla hareket tamamlanır'],
+    img: 'kettlebell swing exercise',
+    emoji: '🔔'
+  },
+  'Box Jump': {
+    muscle: ['Quadriceps', 'Glutes', 'Patlayıcı Güç'],
+    category: 'Pliometrik · Alt Vücut',
+    desc: 'Bir platformun üzerine iki ayakla atlama. Alt vücut patlayıcı gücünü ve hızını geliştirir. Sporcular için atletizm, herkes için kondisyon açısından değerlidir.',
+    tips: ['Yumuşak iniş için çömelerek in — diz kırık', 'Atlama öncesi çömekten patlayıcı itişle at', 'Başlangıçta alçak bir platform seç'],
+    img: 'box jump plyometric exercise',
+    emoji: '📦'
+  },
+  'Mountain Climber': {
+    muscle: ['Core', 'Omuz', 'Cardio'],
+    category: 'HIIT · Core',
+    desc: 'Plank pozisyonunda dizleri göğüse çekme hareketi. Core\'u güçlü çalıştırırken kalp atış hızını yüksek tutar. HIIT devrelerinin vazgeçilmez egzersizlerinden biridir.',
+    tips: ['Kalçayı sabit tut — yukarı kalkmasın', 'Hızlı tempo için kardio, yavaş için core odağı', 'Omuzlar bilek üzerinde dengeli dursun'],
+    img: 'mountain climber exercise core',
+    emoji: '🧗'
+  },
+  'Jump Rope': {
+    muscle: ['Cardio', 'Koordinasyon', 'Baldır'],
+    category: 'Kardio · Kondisyon',
+    desc: 'Atlama ipi ile yapılan kardio egzersizi. Koordinasyonu, ritmi ve kondisyonu geliştirir. Basit ama son derece etkili bir ısınma ve yağ yakma aracıdır.',
+    tips: ['Bilek hareketleriyle dön — kol sallamak değil', 'Parmak uçlarına in, topukla değme', 'Başlangıçta ritmi yakala, sonra hızlan'],
+    img: 'jump rope cardio fitness',
+    emoji: '🪢'
+  },
+  'Pull-Up/Inverted Row': {
+    muscle: ['Sırt', 'Biceps'],
+    category: 'Vücut Ağırlığı · Sırt',
+    desc: 'Pull-up ya da bar altında yapılan inverted row. Sırtın en geniş kası olan latissimus dorsi\'yi ve bicepsi güçlü çalıştırır. Ev antrenmanının sırt için en etkili seçeneği.',
+    tips: ['Tam asılış pozisyonundan başla', 'Göğsü bara yaklaştır — çeneni değil', 'Kontrollü iniş kasılmayı uzatır'],
+    img: 'pull up exercise back',
+    emoji: '⬆️'
+  },
+  'Pike Push-Up': {
+    muscle: ['Omuz', 'Triceps'],
+    category: 'Vücut Ağırlığı · Omuz',
+    desc: 'Kalçayı yukarı kaldırarak ters V pozisyonunda yapılan push-up çeşidi. Overhead press\'in vücut ağırlıklı alternatifi. Omuz gücü ve stabilite için mükemmeldir.',
+    tips: ['Kalça olabildiğince yukarıda — daha fazla omuz yükü', 'Baş iki el arasına insin', 'Handstand push-up\'a ilerleme için temel hareket'],
+    img: 'pike push up shoulder exercise',
+    emoji: '🔼'
+  },
+  'Diamond Push-Up': {
+    muscle: ['Triceps', 'Göğüs (iç)'],
+    category: 'Vücut Ağırlığı · Kol',
+    desc: 'Elleri elmas şeklinde birleştirerek yapılan push-up çeşidi. Tricepsi aşırı derecede zorlar. Normal push-up\'tan çok daha fazla kol gücü gerektirir.',
+    tips: ['Eller göğüs ortasında, elmas şekli oluştursun', 'Dirsekler geriye değil, vücuda paralel gitsin', 'Başlangıçta dizlerde yapıp ilerleyebilirsin'],
+    img: 'diamond push up triceps exercise',
+    emoji: '💎'
+  },
+  'Bodyweight Squat': {
+    muscle: ['Quadriceps', 'Glutes', 'Hamstring'],
+    category: 'Vücut Ağırlığı · Alt Vücut',
+    desc: 'Ağırlıksız squat. Alt vücudun tüm büyük kas gruplarını çalıştırır. Form geliştirmek, ısınmak veya yüksek tekrarlı kondisyon için idealdir.',
+    tips: ['Ayaklar omuz genişliğinde, parmak uçları hafif dışa', 'Dizler parmak uçlarının ötesine geçebilir — doğal', 'Göğüs dik, bel nötral tut'],
+    img: 'bodyweight squat exercise',
+    emoji: '🦵'
+  },
+  'Jump Squat': {
+    muscle: ['Quadriceps', 'Glutes', 'Cardio'],
+    category: 'Pliometrik · Alt Vücut',
+    desc: 'Squat pozisyonundan patlayıcı zıplayışla yapılan varyant. Alt vücut patlayıcı gücünü geliştirir ve yağ yakmaya katkıda bulunur.',
+    tips: ['Yumuşak inişe odaklan — dizler kırık, kontrollü çök', 'Kalkışta tam yüksel, kol salınımı momentum verir', 'Diz sağlığı için patlayıcı iniş değil, yumuşak iniş'],
+    img: 'jump squat plyometric',
+    emoji: '⬆️'
+  },
+  'Resistance Band Row': {
+    muscle: ['Sırt', 'Biceps'],
+    category: 'Ev Antrenmanı · Sırt',
+    desc: 'Direnç bandı ile yapılan çekiş hareketi. Makine gerektirmez. Orta sırt, rhomboid ve biceps kaslarını güçlü çalıştırır. Ev antrenmanının sırt için mükemmel seçeneği.',
+    tips: ['Bandı sabit bir noktaya bağla ya da ayakla bas', 'Omuzları geriye al, kürek kemiklerini sıkıştır', 'Band gerginliğini ayarlayarak direnç belirle'],
+    img: 'resistance band row exercise',
+    emoji: '🔄'
+  },
+  'Dumbbell Row': {
+    muscle: ['Sırt', 'Biceps', 'Rear Delt'],
+    category: 'Bileşik · Sırt',
+    desc: 'Tek taraflı dumbbell çekiş hareketi. Her iki tarafı bağımsız çalıştırarak kas dengesizliklerini giderir. Orta sırt ve latissimus dorsi için etkili bir hareketdir.',
+    tips: ['Desteklenen kol veya diz üzerinde dengelen', 'Dumbbell\'ı döndürme — nötral kavrama daha iyidir', 'Dirsek geriye ve yukarıya çekilsin'],
+    img: 'dumbbell row back exercise',
+    emoji: '🏋️'
+  },
+};
+
+// ─── MODAL FUNCTIONS ─────────────────────────────────────
+function openExerciseModal(name, sets) {
+  const data = exerciseDB[name];
+  if (!data) return;
+
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-sets').textContent = sets;
+  document.getElementById('modal-desc').textContent = data.desc;
+  document.getElementById('modal-placeholder').textContent = data.emoji;
+
+  // Tags
+  const tagsEl = document.getElementById('modal-tags');
+  tagsEl.innerHTML = [data.category, ...data.muscle].map(t =>
+    `<span class="modal-tag">${t}</span>`).join('');
+
+  // Tips
+  document.getElementById('modal-tips-list').innerHTML =
+    data.tips.map(t => `<li>${t}</li>`).join('');
+
+  // Image via Unsplash
+  const img = document.getElementById('modal-img');
+  img.style.display = 'block';
+  img.classList.add('loading');
+  img.src = `https://source.unsplash.com/800x400/?${encodeURIComponent(data.img)}&sig=${Math.random()}`;
+  img.alt = name;
+
+  document.getElementById('ex-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('ex-modal')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('ex-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+
+
+let userProfile = {};
+let chatHistory = [];
+
+// ─── CHIP SELECTION ──────────────────────────────────────
+document.querySelectorAll('.chips-row').forEach(row => {
+  row.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+});
+
+// ─── START ───────────────────────────────────────────────
+async function startTrainer() {
+  const name   = document.getElementById('f-name').value.trim();
+  const age    = document.getElementById('f-age').value;
+  const weight = document.getElementById('f-weight').value;
+  const height = document.getElementById('f-height').value;
+  const health = document.getElementById('f-health').value.trim();
+
+  if (!name || !age || !weight || !height) {
+    alert('Lütfen Ad, Yaş, Kilo ve Boy bilgilerini gir.');
+    return;
+  }
+
+  const getChip = (id) => document.querySelector(`#${id} .chip.active`)?.dataset.val || '';
+
+  userProfile = {
+    name, age, weight, height, health,
+    level: getChip('level-chips'),
+    goal: getChip('goal-chips'),
+    days: getChip('days-chips'),
+    equipment: getChip('equip-chips'),
+    bmi: (weight / Math.pow(height / 100, 2)).toFixed(1)
+  };
+
+  // Switch screens
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('trainer-screen').style.display = 'block';
+
+  // Fill header
+  const firstName = name.split(' ')[0].toUpperCase();
+  document.getElementById('display-name').textContent = firstName;
+  document.getElementById('badge-goal').textContent = userProfile.goal;
+  document.getElementById('avatar-initials').textContent =
+    name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  // Stats
+  renderStats();
+
+  // First AI message
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
+
+  await sendInitialMessage();
+}
+
+function renderStats() {
+  const bmi = parseFloat(userProfile.bmi);
+  let bmiLabel = bmi < 18.5 ? 'Zayıf' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Kilolu' : 'Obez';
+
+  document.getElementById('stats-strip').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Kilo</div>
+      <div class="stat-value">${userProfile.weight}</div>
+      <div class="stat-sub">kilogram</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Boy</div>
+      <div class="stat-value">${userProfile.height}</div>
+      <div class="stat-sub">santimetre</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">BMI</div>
+      <div class="stat-value">${userProfile.bmi}</div>
+      <div class="stat-sub">${bmiLabel}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Haftalık</div>
+      <div class="stat-value">${userProfile.days}×</div>
+      <div class="stat-sub">antrenman</div>
+    </div>
+  `;
+}
+
+// ─── CHAT ────────────────────────────────────────────────
+async function sendInitialMessage() {
+  const systemPrompt = buildSystemPrompt();
+
+  const intro = `Merhaba! Ben senin kişisel APEX antrenörüm. Profilini inceledim. Hadi başlayalım — önce sana haftalık antrenman programını oluşturayım.`;
+  addMessage('ai', intro);
+
+  // Build workout plan via API
+  addTypingIndicator();
+  try {
+    const planText = await callClaude(systemPrompt,
+      `${userProfile.name} için ${userProfile.days} günlük haftalık antrenman programı oluştur. Her gün için: Gün adı, odak kaslar, ve 5-6 egzersiz listesi (set x tekrar formatında). JSON formatında değil, düz metin olarak ver.`
+    );
+    removeTypingIndicator();
+    addMessage('ai', planText);
+    // Also parse and render cards
+    renderWorkoutCards();
+  } catch(e) {
+    removeTypingIndicator();
+    addMessage('ai', 'Programı yüklerken bir sorun oluştu. Sormak istediğin her şeyi benimle konuşabilirsin!');
+  }
+
+  chatHistory = [
+    { role: 'user', content: `Benim profilim: ${JSON.stringify(userProfile)}` },
+  ];
+}
+
+function buildSystemPrompt() {
+  return `Sen APEX adlı elit bir kişisel fitness antrenörüsün. Konuşma dili Türkçe.
+
+Kullanıcı Profili:
+- İsim: ${userProfile.name}
+- Yaş: ${userProfile.age}, Kilo: ${userProfile.weight}kg, Boy: ${userProfile.height}cm, BMI: ${userProfile.bmi}
+- Seviye: ${userProfile.level}
+- Hedef: ${userProfile.goal}
+- Haftalık antrenman: ${userProfile.days} gün
+- Ekipman: ${userProfile.equipment}
+- Sağlık notu: ${userProfile.health || 'Yok'}
+
+Kurallar:
+- Kısa, net, motive edici cevaplar ver
+- Bilimsel temelli öneriler sun
+- Kullanıcının ismiyle hitap et
+- Emojileri ölçülü kullan
+- Antrenman, beslenme, motivasyon, toparlanma konularında uzman ol`;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text || document.getElementById('send-btn').disabled) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', text);
+
+  chatHistory.push({ role: 'user', content: text });
+
+  document.getElementById('send-btn').disabled = true;
+  addTypingIndicator();
+
+  try {
+    const response = await callClaudeConvo(buildSystemPrompt(), chatHistory);
+    removeTypingIndicator();
+    addMessage('ai', response);
+    chatHistory.push({ role: 'assistant', content: response });
+  } catch(e) {
+    removeTypingIndicator();
+    addMessage('ai', 'Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar dene.');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+function quickAsk(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ─── MESSAGE RENDERING ───────────────────────────────────
+function addMessage(role, text) {
+  const container = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+
+  const sender = role === 'ai' ? 'APEX AI' : 'SEN';
+  const formatted = formatText(text);
+
+  msg.innerHTML = `
+    <div class="msg-sender">${sender}</div>
+    <div class="msg-bubble">${formatted}</div>
+  `;
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>')
+    .replace(/^- (.+)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+}
+
+function addTypingIndicator() {
+  const container = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'msg ai';
+  el.id = 'typing';
+  el.innerHTML = `<div class="msg-sender">APEX AI</div><div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  document.getElementById('typing')?.remove();
+}
+
+// ─── WORKOUT CARDS ───────────────────────────────────────
+async function renderWorkoutCards() {
+  const days = parseInt(userProfile.days);
+  const container = document.getElementById('workout-plan');
+
+  // Simple default plans by days/goal
+  const plans = generateDefaultPlan(days, userProfile.goal, userProfile.equipment);
+
+  container.innerHTML = '';
+  plans.forEach((day, i) => {
+    const card = document.createElement('div');
+    card.className = 'plan-card';
+    card.innerHTML = `
+      <div class="plan-card-header" onclick="toggleCard(this)">
+        <div class="plan-day-label">
+          <div class="day-num">${i + 1}</div>
+          <div>
+            <div class="day-title">${day.name}</div>
+            <div class="day-sub">${day.focus}</div>
+          </div>
+        </div>
+        <div class="plan-toggle">▾</div>
+      </div>
+      <div class="plan-card-body">
+        ${day.exercises.map(ex => `
+          <div class="exercise-row" onclick="openExerciseModal('${ex.name.replace(/'/g,"\\'")}', '${ex.sets}')">
+            <span class="ex-name ex-name-clickable">${ex.name} <span style="font-size:.7rem;color:var(--muted);margin-left:4px">↗</span></span>
+            <span class="ex-sets">${ex.sets}</span>
+          </div>`).join('')}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleCard(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+function generateDefaultPlan(days, goal, equip) {
+  const gym = equip.includes('salonu');
+  const isGain = goal.includes('Kas');
+  const isFat = goal.includes('Yağ');
+  const isCardio = goal.includes('Dayanıklılık');
+
+  const allDays = [
+    {
+      name: 'Göğüs & Triceps', focus: 'Üst vücut itme',
+      exercises: [
+        { name: gym ? 'Barbell Bench Press' : 'Push-Up', sets: '4×8–10' },
+        { name: gym ? 'Incline DB Press' : 'Pike Push-Up', sets: '3×10' },
+        { name: gym ? 'Cable Flyes' : 'Diamond Push-Up', sets: '3×12' },
+        { name: 'Triceps Pushdown', sets: '3×12' },
+        { name: 'Skull Crushers', sets: '3×10' },
+      ]
+    },
+    {
+      name: 'Sırt & Biceps', focus: 'Üst vücut çekme',
+      exercises: [
+        { name: gym ? 'Deadlift' : 'Resistance Band Row', sets: '4×6–8' },
+        { name: gym ? 'Lat Pulldown' : 'Pull-Up/Inverted Row', sets: '4×10' },
+        { name: gym ? 'Seated Cable Row' : 'Dumbbell Row', sets: '3×12' },
+        { name: 'Bicep Curl', sets: '3×12' },
+        { name: 'Hammer Curl', sets: '3×12' },
+      ]
+    },
+    {
+      name: 'Bacak & Glutes', focus: 'Alt vücut güç',
+      exercises: [
+        { name: gym ? 'Squat' : 'Bodyweight Squat', sets: '4×10' },
+        { name: gym ? 'Leg Press' : 'Jump Squat', sets: '3×12' },
+        { name: 'Romanian Deadlift', sets: '3×10' },
+        { name: 'Leg Curl', sets: '3×12' },
+        { name: 'Calf Raise', sets: '4×15' },
+      ]
+    },
+    {
+      name: 'Omuz & Core', focus: 'Omuz & karın',
+      exercises: [
+        { name: gym ? 'Overhead Press' : 'Pike Push-Up', sets: '4×8' },
+        { name: 'Lateral Raise', sets: '3×15' },
+        { name: 'Face Pull', sets: '3×15' },
+        { name: 'Plank', sets: '3×60 sn' },
+        { name: 'Cable Crunch / Crunch', sets: '3×15' },
+      ]
+    },
+    {
+      name: 'Tam Vücut + HIIT', focus: 'Yağ yakma & kondisyon',
+      exercises: [
+        { name: 'Burpee', sets: '4×15' },
+        { name: 'Kettlebell Swing', sets: '4×20' },
+        { name: 'Box Jump', sets: '3×12' },
+        { name: 'Mountain Climber', sets: '3×30 sn' },
+        { name: 'Jump Rope', sets: '5×1 dak' },
+      ]
+    },
+  ];
+
+  if (days === 2) return [allDays[0], allDays[2]];
+  if (days === 3) return [allDays[0], allDays[2], allDays[4]];
+  if (days === 4) return allDays.slice(0,4);
+  return allDays;
+}
+
+// ─── API CALLS ───────────────────────────────────────────
+async function callClaude(system, userMsg) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': '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',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  const data = await response.json();
+  return data.content?.map(b => b.text || '').join('') || 'Yanıt alınamadı.';
+}
+
+async function callClaudeConvo(system, history) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': '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',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: history
+    })
+  });
+  const data = await response.json();
+  return data.content?.map(b => b.text || '').join('') || 'Yanıt alınamadı.';
+}
+
+// ─── RESET ───────────────────────────────────────────────
+function resetApp() {
+  if (!confirm('Başa dönmek istediğinden emin misin?')) return;
+  userProfile = {};
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  document.getElementById('workout-plan').innerHTML = '';
+  document.getElementById('trainer-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('start-btn').disabled = false;
+}
+</script>
+</body>
+</html>
